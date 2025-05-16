@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Therapeutic Sand Art</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        :root {
+            --primary: #2a2a72;
+            --secondary: #009ffd;
+            --accent: #ff6b6b;
+            --background: #0a0a1f;
+            --text: #ffffff;
+        }
+
+        body {
+            background: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+            overflow: hidden;
+            cursor: none;
+        }
+
+        #canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1rem;
+            z-index: 2;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            color: var(--text);
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .control-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, var(--secondary), var(--accent));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: -1;
+        }
+
+        .control-btn:hover::before {
+            opacity: 0.2;
+        }
+
+        .control-btn.active {
+            background: var(--secondary);
+            box-shadow: 0 0 20px rgba(0, 159, 253, 0.3);
+        }
+
+        .color-picker {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            z-index: 2;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .color-option {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .color-option::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(255,255,255,0.2) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .color-option:hover {
+            transform: scale(1.2);
+        }
+
+        .color-option:hover::before {
+            opacity: 1;
+        }
+
+        .color-option.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .custom-cursor {
+            width: 20px;
+            height: 20px;
+            background: var(--secondary);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            mix-blend-mode: difference;
+            z-index: 9999;
+            transition: all 0.1s ease;
+            box-shadow: 0 0 20px rgba(0, 159, 253, 0.5);
+        }
+
+        .instructions {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            z-index: 2;
+            max-width: 300px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .instructions h2 {
+            font-size: 1.4rem;
+            margin-bottom: 0.8rem;
+            background: linear-gradient(45deg, var(--secondary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .instructions p {
+            font-size: 0.9rem;
+            color: #a0a0a0;
+            line-height: 1.6;
+        }
+
+        .size-control {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            z-index: 2;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .size-slider {
+            width: 150px;
+            height: 4px;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .size-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--secondary);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .size-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 20px rgba(0, 159, 253, 0.5);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 1s ease-out;
+        }
+
+        .save-btn {
+            position: fixed;
+            top: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            color: var(--text);
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            z-index: 2;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .save-btn:hover {
+            background: var(--secondary);
+            box-shadow: 0 0 20px rgba(0, 159, 253, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .weather-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .color-picker {
+                top: auto;
+                bottom: 2rem;
+                right: 2rem;
+                flex-direction: row;
+            }
+        }
+
+        /* Add these new responsive styles */
+        @media (max-width: 768px) {
+            .controls {
+                bottom: 1rem;
+                padding: 0.8rem;
+                gap: 0.5rem;
+                width: 90%;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .control-btn {
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .color-picker {
+                bottom: 5rem;
+                right: 1rem;
+                flex-direction: row;
+                padding: 0.8rem;
+                gap: 0.5rem;
+            }
+
+            .color-option {
+                width: 25px;
+                height: 25px;
+            }
+
+            .instructions {
+                top: 1rem;
+                left: 1rem;
+                right: 1rem;
+                max-width: none;
+                padding: 1rem;
+                font-size: 0.9rem;
+            }
+
+            .size-control {
+                bottom: 5rem;
+                right: 1rem;
+                padding: 0.8rem;
+            }
+
+            .size-slider {
+                width: 120px;
+            }
+
+            .save-btn {
+                top: 1rem;
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .controls {
+                bottom: 0.5rem;
+                padding: 0.6rem;
+            }
+
+            .control-btn {
+                padding: 0.5rem 0.8rem;
+                font-size: 0.8rem;
+            }
+
+            .color-picker {
+                bottom: 4rem;
+            }
+
+            .instructions {
+                display: none;
+            }
+
+            .size-control {
+                bottom: 4rem;
+            }
+        }
+
+        /* Add touch-specific styles */
+        @media (hover: none) {
+            .control-btn:hover::before {
+                opacity: 0;
+            }
+
+            .color-option:hover {
+                transform: none;
+            }
+
+            .color-option:active {
+                transform: scale(1.2);
+            }
+
+            .control-btn:active {
+                background: var(--secondary);
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="custom-cursor"></div>
+
+    <button class="save-btn fade-in" onclick="saveArtwork()">💾 Save Artwork</button>
+
+    <div class="instructions fade-in">
+        <h2>Welcome to Therapeutic Sand Art</h2>
+        <p>Create mesmerizing patterns by dragging your mouse. Experiment with different colors, effects, and particle sizes to create unique artwork.</p>
+    </div>
+
+    <div class="color-picker fade-in">
+        <div class="color-option active" style="background: #009ffd" onclick="changeColor('#009ffd')"></div>
+        <div class="color-option" style="background: #ff6b6b" onclick="changeColor('#ff6b6b')"></div>
+        <div class="color-option" style="background: #00b894" onclick="changeColor('#00b894')"></div>
+        <div class="color-option" style="background: #fdcb6e" onclick="changeColor('#fdcb6e')"></div>
+        <div class="color-option" style="background: #e84393" onclick="changeColor('#e84393')"></div>
+    </div>
+
+    <div class="controls fade-in">
+        <button class="control-btn active" onclick="changeEffect('flow')">Flow</button>
+        <button class="control-btn" onclick="changeEffect('spiral')">Spiral</button>
+        <button class="control-btn" onclick="changeEffect('wave')">Wave</button>
+        <button class="control-btn" onclick="changeEffect('explosion')">Explosion</button>
+        <button class="control-btn" onclick="clearCanvas()">Clear</button>
+    </div>
+
+    <div class="size-control fade-in">
+        <input type="range" class="size-slider" min="1" max="10" value="3" oninput="changeSize(this.value)">
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const cursor = document.querySelector('.custom-cursor');
+        let isDrawing = false;
+        let currentColor = '#009ffd';
+        let currentEffect = 'flow';
+        let particles = [];
+        let mouseX = 0;
+        let mouseY = 0;
+        let particleSize = 3;
+        let lastX = 0;
+        let lastY = 0;
+        let velocityX = 0;
+        let velocityY = 0;
+
+        // Add touch support
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let isTouching = false;
+
+        // Set canvas size
+        function resizeCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            canvas.style.width = window.innerWidth + 'px';
+            canvas.style.height = window.innerHeight + 'px';
+            ctx.scale(dpr, dpr);
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Custom cursor
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX - 10 + 'px';
+            cursor.style.top = e.clientY - 10 + 'px';
+            
+            // Calculate velocity
+            velocityX = e.clientX - lastX;
+            velocityY = e.clientY - lastY;
+            lastX = e.clientX;
+            lastY = e.clientY;
+            
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        // Particle class
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.size = Math.random() * particleSize + 2;
+                this.speedX = Math.random() * 2 - 1;
+                this.speedY = Math.random() * 2 - 1;
+                this.life = 1;
+                this.decay = Math.random() * 0.02 + 0.02;
+                this.angle = Math.random() * Math.PI * 2;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.2;
+                this.orbitRadius = Math.random() * 20 + 10;
+                this.orbitSpeed = Math.random() * 0.02 + 0.01;
+                this.orbitAngle = Math.random() * Math.PI * 2;
+            }
+
+            update() {
+                switch(currentEffect) {
+                    case 'flow':
+                        this.x += this.speedX + velocityX * 0.1;
+                        this.y += this.speedY + velocityY * 0.1;
+                        break;
+                    case 'spiral':
+                        this.angle += this.rotationSpeed;
+                        this.x += Math.cos(this.angle) * 2;
+                        this.y += Math.sin(this.angle) * 2;
+                        break;
+                    case 'wave':
+                        this.x += this.speedX;
+                        this.y += Math.sin(this.x * 0.05) * 2;
+                        break;
+                    case 'explosion':
+                        this.x += this.speedX * 2;
+                        this.y += this.speedY * 2;
+                        this.speedX *= 0.98;
+                        this.speedY *= 0.98;
+                        break;
+                }
+                
+                this.life -= this.decay;
+                this.size *= 0.99;
+            }
+
+            draw() {
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Add glow effect
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = this.color;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        // Drawing functions
+        function createParticles(x, y) {
+            const particleCount = currentEffect === 'flow' ? 3 : 
+                                currentEffect === 'spiral' ? 5 : 
+                                currentEffect === 'explosion' ? 10 : 4;
+            
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle(x, y, currentColor));
+            }
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(10, 10, 31, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].draw();
+
+                if (particles[i].life <= 0 || particles[i].size <= 0.5) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            handleDrawing(mouseX, mouseY);
+            requestAnimationFrame(animate);
+        }
+
+        // Event listeners
+        canvas.addEventListener('mousedown', () => {
+            isDrawing = true;
+            cursor.style.transform = 'scale(1.5)';
+            cursor.style.boxShadow = '0 0 30px rgba(0, 159, 253, 0.8)';
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDrawing = false;
+            cursor.style.transform = 'scale(1)';
+            cursor.style.boxShadow = '0 0 20px rgba(0, 159, 253, 0.5)';
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            isDrawing = false;
+            cursor.style.transform = 'scale(1)';
+            cursor.style.boxShadow = '0 0 20px rgba(0, 159, 253, 0.5)';
+        });
+
+        // Touch event handlers
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            isTouching = true;
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+            mouseX = touch.clientX;
+            mouseY = touch.clientY;
+            cursor.style.transform = 'scale(1.5)';
+            cursor.style.boxShadow = '0 0 30px rgba(0, 159, 253, 0.8)';
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (!isTouching) return;
+            
+            const touch = e.touches[0];
+            velocityX = touch.clientX - touchStartX;
+            velocityY = touch.clientY - touchStartY;
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+            mouseX = touch.clientX;
+            mouseY = touch.clientY;
+            
+            // Update cursor position
+            cursor.style.left = touch.clientX - 10 + 'px';
+            cursor.style.top = touch.clientY - 10 + 'px';
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            isTouching = false;
+            cursor.style.transform = 'scale(1)';
+            cursor.style.boxShadow = '0 0 20px rgba(0, 159, 253, 0.5)';
+        });
+
+        canvas.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            isTouching = false;
+            cursor.style.transform = 'scale(1)';
+            cursor.style.boxShadow = '0 0 20px rgba(0, 159, 253, 0.5)';
+        });
+
+        // Update drawing function to handle both mouse and touch
+        function handleDrawing(x, y) {
+            if (isDrawing || isTouching) {
+                createParticles(x, y);
+            }
+        }
+
+        // Control functions
+        function changeColor(color) {
+            currentColor = color;
+            document.querySelectorAll('.color-option').forEach(option => {
+                option.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        function changeEffect(effect) {
+            currentEffect = effect;
+            document.querySelectorAll('.control-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        function changeSize(size) {
+            particleSize = size;
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles = [];
+        }
+
+        function saveArtwork() {
+            const link = document.createElement('a');
+            link.download = 'sand-art.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        // Add orientation change handler
+        window.addEventListener('orientationchange', () => {
+            setTimeout(resizeCanvas, 100);
+        });
+
+        // Start animation
+        animate();
+    </script>
+</body>
+</html> 
